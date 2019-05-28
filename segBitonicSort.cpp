@@ -32,7 +32,7 @@ void segmentedBitonicSort(float* data, int* seg_id, int* seg_start, int n, int m
         cout<<"Input error!Accurate conditions: seg_start[m]==n,seg_id[n-1]==(m-1)"<<endl;
         return;
     }
-    float Max=999999;//作为填充数
+    float Max=sqrt(-1.f);//作为填充数
     //先段内排序
     for(int d=0;d<m;d++)
     {
@@ -153,13 +153,13 @@ void segmentedBitonicSort(float* data, int* seg_id, int* seg_start, int n, int m
                 }
             }
         }
-        for (int i = seg_start[d]; i < seg_start[d+1]; i++)
-            if(data[i]==Max)
-                data[i]=sqrt(-1.f);
+        // for (int i = seg_start[d]; i < seg_start[d+1]; i++)
+        //     if(data[i]==Max)
+        //         data[i]=sqrt(-1.f);
     }
-    for(int i=0;i<m;i++)
-        for(int j=seg_start[i];j<seg_start[i+1];j++)
-            seg_id[j]=i;
+    // for(int i=0;i<m;i++)
+    //     for(int j=seg_start[i];j<seg_start[i+1];j++)
+    //         seg_id[j]=i;
 }
 int  main()
 {
