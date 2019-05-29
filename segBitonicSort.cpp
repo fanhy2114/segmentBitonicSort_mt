@@ -18,6 +18,8 @@
 #include <iostream>
 #include <math.h>
 #include <thread>
+#include <sys/time.h>
+#include <pthread.h>
 using namespace std;
 
 float Max = sqrt(-1.f);//作为填充数
@@ -25,6 +27,10 @@ float* data;
 int* seg_id;
 int* seg_start;
 int n,m;
+int num_threads;
+pthread_t* threads;
+struct timeval tstart, tend;
+double exectime;
 
 bool init()
 {
@@ -35,7 +41,7 @@ bool init()
     scanf("%d", &n);
     scanf("%d", &m);
     ////判断输入是否有误
-    if(n <= 0 || m <= 0 || m>n)
+    if(n <= 0 || m <= 0 || m > n)
     {
         fprintf(stderr,"Input error! Accurate conditions:n>m>0\n");
         return false;
@@ -75,13 +81,18 @@ void show_result()
         }
     }
     cout << endl;
+    exectime = (tend.tv_sec - tstart.tv_sec) * 1000.0; // sec to ms
+    exectime += (tend.tv_usec - tstart.tv_usec) / 1000.0; // us to ms   
+    printf( "Number of MPI ranks: 0\tNumber of threads: %d\tExecution time:%.3lf sec\n",
+          num_threads, exectime/1000.0);
     fflush(stdout);
     fclose(stdout);
 }
 
 
-void bitonicSort(int seg_index)
+void* bitonicSort(void *para)
 {
+    int seg_index = *((int *)para);
     int len=1;
     int cur_len=seg_start[seg_index+1]-seg_start[seg_index];
     int start_point = seg_start[seg_index]-seg_start[0];
@@ -204,9 +215,27 @@ void bitonicSort(int seg_index)
 
 void segmentedBitonicSort()
 {
-    for(int d=0; d < m; d++){
-        thread t (bitonicSort, d);
-        t.detach();
+    // for(int d=0; d < m; d++){
+    //     thread t (bitonicSort, d);
+    //     t.detach();
+    // }
+    int rv;
+    num_threads = (int)thread::hardware_concurrency()-2;
+    if(num_threads >= m){
+        num_threads = m;
+    }
+    threads = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
+    for(int i=0; i<num_threads; ++i){
+        int* tid = (int*)malloc(sizeof(int));
+        *tid = i;
+        rv = pthread_create(&threads[i], 0, bitonicSort, (void *)tid );
+        if(rv){
+            fprintf(stderr, "Error: Unable to create thread.\n");
+            exit(-1);
+        }
+    }
+    for(int i=0; i<num_threads; i++){
+        pthread_join(threads[i], NULL);
     }
 }
 
@@ -239,9 +268,14 @@ int  main()
         fprintf(stderr,"Initialization failed.\n");
         return 0;
     }
+    gettimeofday(&tstart, NULL);
     // 调用分段双调排序函数
     segmentedBitonicSort();
-    // 输出
+
+    gettimeofday(&tend, NULL);
+
     show_result();
+
+    // 输出
     return 0;
 }
