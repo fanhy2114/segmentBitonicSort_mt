@@ -278,32 +278,32 @@ void* bitonicSort(void *para)
 void segmentedBitonicSort()
 {
     // With multi-thread
-    int rv;
-    num_threads = (int)thread::hardware_concurrency()-2;
-    if(num_threads >= m){
-        num_threads = m;
-    }
-    threads = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
-    for(int i=0; i<num_threads; ++i){
-        int* tid = (int*)malloc(sizeof(int));
-        *tid = i;
-        rv = pthread_create(&threads[i], 0, bitonicSort, (void *)tid );
-        if(rv){
-            fprintf(stderr, "Error: Unable to create thread.\n");
-            exit(-1);
-        }
-    }
-    for(int i=0; i<num_threads; i++){
-        pthread_join(threads[i], NULL);
-    }
+    // int rv;
+    // num_threads = (int)thread::hardware_concurrency()-2;
+    // if(num_threads >= m){
+    //     num_threads = m;
+    // }
+    // threads = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
+    // for(int i=0; i<num_threads; ++i){
+    //     int* tid = (int*)malloc(sizeof(int));
+    //     *tid = i;
+    //     rv = pthread_create(&threads[i], 0, bitonicSort, (void *)tid );
+    //     if(rv){
+    //         fprintf(stderr, "Error: Unable to create thread.\n");
+    //         exit(-1);
+    //     }
+    // }
+    // for(int i=0; i<num_threads; i++){
+    //     pthread_join(threads[i], NULL);
+    // }
 
     // Linear ranking
-    // num_threads = 1;
-    // for(int i=0; i<m; i++){
-    //     int* index =(int*)malloc(sizeof(int));
-    //     *index =i; 
-    //     bitonicSort((void*)index);
-    // }
+    num_threads = 1;
+    for(int i=0; i<m; i++){
+        int* index =(int*)malloc(sizeof(int));
+        *index =i; 
+        bitonicSort((void*)index);
+    }
 }
 
 
@@ -318,7 +318,7 @@ int  main()
     // int m=4;
 
     // generate data
-    generateData(10000000,20);
+    generateData(10000000,10);
     // ³õÊ¼»¯
     if(!init()){
         fprintf(stderr,"Initialization failed.\n");
