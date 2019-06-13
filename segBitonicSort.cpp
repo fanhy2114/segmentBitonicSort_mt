@@ -318,7 +318,7 @@ int  main()
     // int m=4;
 
     // generate data
-    generateData(10000000,10);
+    generateData(100000,10);
     // ³õÊ¼»¯
     if(!init()){
         fprintf(stderr,"Initialization failed.\n");
