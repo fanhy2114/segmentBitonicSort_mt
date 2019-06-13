@@ -3,8 +3,7 @@
 //编写一个分段双调排序(Bitonic sort)函数，对每一段内部的浮点数进行排序，但
 //不要改变段间的位置。
 //接口方式：
-//void segmentedBitonicSort(float* data, int* seg_id, int* seg_start, int
-//n, int m);
+//void segmentedBitonicSort(float* data, int* seg_id, int* seg_start, int n, int m);
 //
 //输入数据中，data包含需要分段排序的n个float值，seg_id给出data中n个元素各
 //自所在的 段编号。seg_start共有m+1个元素，前m个分别给 出0..m-1共m个段的起
@@ -26,8 +25,10 @@
 #include <string>
 using namespace std;
 
-string in_file = "input.txt";
-string out_file = "output.txt";
+string in_file = "data.txt";
+string out_file_single = "output_single.txt";
+string out_file_mt = "output_mt.txt";
+
 float Max = sqrt(-1.f);//作为填充数
 float* data;
 int* seg_id;
@@ -35,8 +36,7 @@ int* seg_start;
 int n,m;
 int num_threads;
 pthread_t* threads;
-struct timeval tstart, tend;
-double exectime;
+struct timeval tstart_single, tend_single,tstart_mt, tend_mt;
 
 void generateData(int n, int m){
     // Initialization
@@ -127,9 +127,27 @@ bool init()
     return true;
 }
 
+void show_time(){
+    if(freopen("result.txt", "w", stdout)==NULL){
+        fprintf(stderr,"Failed to open output file.\n");
+        return ;
+    }
+    double exectime_single = (tend_single.tv_sec - tstart_single.tv_sec) * 1000.0; // sec to ms
+    exectime_single += (tend_single.tv_usec - tstart_single.tv_usec) / 1000.0; // us to ms 
+    printf("Sort with single Thread spent: %.3lf sec\n", exectime_single/1000);
 
-void show_result()
+    double exectime_mt = (tend_mt.tv_sec - tstart_mt.tv_sec) * 1000.0; // sec to ms
+    exectime_mt += (tend_mt.tv_usec - tstart_mt.tv_usec) / 1000.0; // us to ms 
+    printf("Sort with %d Thread spent: %.3lf sec\n", num_threads, exectime_mt/1000);
+
+    printf("Sort with mt_threads is %f times faster than single thread.\n", exectime_single/exectime_mt);
+    fflush(stdout);
+    fclose(stdout);
+}
+
+void show_result(int state)
 {
+    string out_file = (state==1)?out_file_single:out_file_mt;
     if(freopen(out_file.c_str(), "w", stdout)==NULL){
         fprintf(stderr,"Failed to open output file.\n");
         return ;
@@ -143,10 +161,6 @@ void show_result()
         }
     }
     cout << endl;
-    exectime = (tend.tv_sec - tstart.tv_sec) * 1000.0; // sec to ms
-    exectime += (tend.tv_usec - tstart.tv_usec) / 1000.0; // us to ms   
-    printf( "Number of threads: %d\tExecution time:%.3lf sec\n",
-          num_threads, exectime/1000);
     fflush(stdout);
     fclose(stdout);
 }
@@ -275,35 +289,47 @@ void* bitonicSort(void *para)
 }
 
 
-void segmentedBitonicSort()
+void segmentedBitonicSort(int state)
 {
-    // With multi-thread
-    // int rv;
-    // num_threads = (int)thread::hardware_concurrency()-2;
-    // if(num_threads >= m){
-    //     num_threads = m;
-    // }
-    // threads = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
-    // for(int i=0; i<num_threads; ++i){
-    //     int* tid = (int*)malloc(sizeof(int));
-    //     *tid = i;
-    //     rv = pthread_create(&threads[i], 0, bitonicSort, (void *)tid );
-    //     if(rv){
-    //         fprintf(stderr, "Error: Unable to create thread.\n");
-    //         exit(-1);
-    //     }
-    // }
-    // for(int i=0; i<num_threads; i++){
-    //     pthread_join(threads[i], NULL);
-    // }
-
-    // Linear ranking
-    num_threads = 1;
-    for(int i=0; i<m; i++){
-        int* index =(int*)malloc(sizeof(int));
-        *index =i; 
-        bitonicSort((void*)index);
+    if(!init()){
+        fprintf(stderr,"Initialization failed.\n");
+        return ;
     }
+    if(state==1){
+        // Linear ranking
+        num_threads = 1;
+        for(int i=0; i<m; i++){
+            int* index =(int*)malloc(sizeof(int));
+            *index =i; 
+            bitonicSort((void*)index);
+        }
+    }
+    else if(state==2){
+        // With multi-thread
+        int rv;
+        num_threads = (int)thread::hardware_concurrency()-2;
+        if(num_threads >= m){
+            num_threads = m;
+        }
+        threads = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
+        for(int i=0; i<num_threads; ++i){
+            int* tid = (int*)malloc(sizeof(int));
+            *tid = i;
+            rv = pthread_create(&threads[i], 0, bitonicSort, (void *)tid );
+            if(rv){
+                fprintf(stderr, "Error: Unable to create thread.\n");
+                exit(-1);
+            }
+        }
+        for(int i=0; i<num_threads; i++){
+            pthread_join(threads[i], NULL);
+        }
+    }
+    else{
+        fprintf(stderr,"Wrong Execute state.\n");
+        return ;
+    }
+    show_result(state);
 }
 
 
@@ -318,18 +344,17 @@ int  main()
     // int m=4;
 
     // generate data
-    generateData(100000,10);
-    // 初始化
-    if(!init()){
-        fprintf(stderr,"Initialization failed.\n");
-        return 0;
-    }
-    gettimeofday(&tstart, NULL);
-    // 调用分段双调排序函数
-    segmentedBitonicSort();
-    gettimeofday(&tend, NULL);
-    show_result();
+    generateData(1000000,5);
+    // 调用分段双调排序函数-串行执行
+    gettimeofday(&tstart_single, NULL);
+    segmentedBitonicSort(1);
+    gettimeofday(&tend_single, NULL);
+
+    // 调用分段双调排序函数-并行执行
+    gettimeofday(&tstart_mt, NULL);
+    segmentedBitonicSort(2);
+    gettimeofday(&tend_mt, NULL);
     
-    // 输出
+    show_time();
     return 0;
 }
