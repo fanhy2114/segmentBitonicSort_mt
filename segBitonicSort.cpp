@@ -51,7 +51,7 @@ void generateData(int n, int m){
     // Generate Data
     srand((unsigned int)time(NULL));
     for (int i=0; i<n; i++){
-        values[i] = rand()%(100000000)*pow(-1,rand());
+        values[i] = rand()%(11234567)*pow(-1,rand());
         ids[i] = rand()%m;
     }
     int count=0;
@@ -298,11 +298,13 @@ void segmentedBitonicSort(int state)
     if(state==1){
         // Linear ranking
         num_threads = 1;
+        gettimeofday(&tstart_single, NULL);
         for(int i=0; i<m; i++){
             int* index =(int*)malloc(sizeof(int));
             *index =i; 
             bitonicSort((void*)index);
         }
+        gettimeofday(&tend_single, NULL);
     }
     else if(state==2){
         // With multi-thread
@@ -311,6 +313,7 @@ void segmentedBitonicSort(int state)
         if(num_threads >= m){
             num_threads = m;
         }
+        gettimeofday(&tstart_mt, NULL);
         threads = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
         for(int i=0; i<num_threads; ++i){
             int* tid = (int*)malloc(sizeof(int));
@@ -324,6 +327,7 @@ void segmentedBitonicSort(int state)
         for(int i=0; i<num_threads; i++){
             pthread_join(threads[i], NULL);
         }
+        gettimeofday(&tend_mt, NULL);
     }
     else{
         fprintf(stderr,"Wrong Execute state.\n");
@@ -344,17 +348,13 @@ int  main()
     // int m=4;
 
     // generate data
-    generateData(10000000, 20);
+    generateData(30000000, 6);
     // 调用分段双调排序函数-串行执行
-    gettimeofday(&tstart_single, NULL);
     segmentedBitonicSort(1);
-    gettimeofday(&tend_single, NULL);
-
-    // 调用分段双调排序函数-并行执行
-    gettimeofday(&tstart_mt, NULL);
-    segmentedBitonicSort(2);
-    gettimeofday(&tend_mt, NULL);
     
+    // 调用分段双调排序函数-并行执行
+    segmentedBitonicSort(2);
+
     show_time();
     return 0;
 }
