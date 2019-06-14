@@ -51,7 +51,7 @@ void generateData(int n, int m){
     // Generate Data
     srand((unsigned int)time(NULL));
     for (int i=0; i<n; i++){
-        values[i] = rand()%(56789)*pow(-1,rand());
+        values[i] = rand()%(11234567)*pow(-1,rand());
         ids[i] = rand()%m;
     }
     int count=0;
@@ -307,10 +307,11 @@ void segmentedBitonicSort(int state)
     else if(state==2){
         // With multi-thread
         int rv;
-        num_threads = (int)thread::hardware_concurrency()-2;
-        if(num_threads >= m){
-            num_threads = m;
-        }
+        // num_threads = (int)thread::hardware_concurrency()-2;
+        // if(num_threads >= m){
+        //     num_threads = m;
+        // }
+        num_threads = 2;
         threads = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
         for(int i=0; i<num_threads; ++i){
             int* tid = (int*)malloc(sizeof(int));
@@ -344,7 +345,7 @@ int  main()
     // int m=4;
 
     // generate data
-    generateData(1000000,5);
+    generateData(10000000,10);
     // 调用分段双调排序函数-串行执行
     gettimeofday(&tstart_single, NULL);
     segmentedBitonicSort(1);
