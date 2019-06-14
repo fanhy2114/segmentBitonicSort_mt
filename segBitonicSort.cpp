@@ -307,11 +307,10 @@ void segmentedBitonicSort(int state)
     else if(state==2){
         // With multi-thread
         int rv;
-        // num_threads = (int)thread::hardware_concurrency()-2;
-        // if(num_threads >= m){
-        //     num_threads = m;
-        // }
-        num_threads = 2;
+        num_threads = (int)thread::hardware_concurrency()-2;
+        if(num_threads >= m){
+            num_threads = m;
+        }
         threads = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
         for(int i=0; i<num_threads; ++i){
             int* tid = (int*)malloc(sizeof(int));
