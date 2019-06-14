@@ -289,7 +289,7 @@ void* bitonicSort(void *para)
 }
 
 
-void segmentedBitonicSort(int state)
+void segmentedBitonicSort(int state, int num)
 {
     if(!init()){
         fprintf(stderr,"Initialization failed.\n");
@@ -309,7 +309,11 @@ void segmentedBitonicSort(int state)
     else if(state==2){
         // With multi-thread
         int rv;
+        // set thread number
         num_threads = (int)thread::hardware_concurrency()-2;
+        if (num_threads > num){
+            num_threads = num;
+        }
         if(num_threads >= m){
             num_threads = m;
         }
@@ -340,20 +344,24 @@ void segmentedBitonicSort(int state)
 
 int  main()
 {
-    // 测试用例
-    // float data[11]={ 0,sqrt(-1.f) -100 , 2, 100, 4, 0.5,sqrt(-1.f), sqrt(-1.f), 3, 0.1, 2};
-    // int seg_id[11]={0, 0, 0, 1, 1, 2, 2, 2, 2,3,3};
-    // int seg_start[5]={0,3,5,9,11};
-    // int n=11;
-    // int m=4;
-
     // generate data
-    generateData(30000000, 6);
+    generateData(10000000, 2);
     // 调用分段双调排序函数-串行执行
-    segmentedBitonicSort(1);
+    /**
+     * segmentedBitonicSort(int state, int thread_num)
+     * state:
+     * -- 1 single thread
+     * -- 2 multi thread
+     * thread_num:number of thread
+     * if thread_num > cpu_thread() -2 
+     *      then thread_num = cpu_thread() - 2;
+     * if thread_num > segment_num then
+     *  thread_num = segment_num;
+     */
+    segmentedBitonicSort(1, 2);
     
     // 调用分段双调排序函数-并行执行
-    segmentedBitonicSort(2);
+    segmentedBitonicSort(2, 2);
 
     show_time();
     return 0;
